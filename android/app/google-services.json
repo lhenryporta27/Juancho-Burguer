@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "635763756519",
+    "project_id": "fastfood-c9327",
+    "storage_bucket": "fastfood-c9327.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:635763756519:android:821b487ac91a9d8d7d8142",
+        "android_client_info": {
+          "package_name": "com.example.fastfood_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3vlPDwgpMyVYyL_BC22uk0HYweE27ONs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
