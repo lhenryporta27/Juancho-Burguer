@@ -1,28 +1,64 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class PlatosScreen extends StatelessWidget {
+class PlatosScreen extends StatefulWidget {
   final bool isAdmin;
 
-  PlatosScreen({required this.isAdmin});
+  const PlatosScreen({super.key, required this.isAdmin});
 
+  @override
+  State<PlatosScreen> createState() => _PlatosScreenState();
+}
+
+class _PlatosScreenState extends State<PlatosScreen> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // 🔹 Método para eliminar un plato
-  Future<void> _deletePlato(String id, BuildContext context) async {
-    try {
-      await _db.collection("platos").doc(id).delete();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Plato eliminado ✅")));
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error al eliminar: $e")));
+  @override
+  void initState() {
+    super.initState();
+
+    // 🚫 Protección total → solo admins reales pueden entrar
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null || widget.isAdmin == false) {
+      Future.microtask(() {
+        if (Navigator.canPop(context)) Navigator.pop(context);
+      });
     }
   }
 
-  // 🔹 Método para agregar o editar un plato
+  // ===============================================================
+  // 🔥 FUNCIÓN DE ERROR LIMPIO
+  // ===============================================================
+  String _errorMessage(Object e) {
+    String msg = e.toString();
+    if (msg.contains("permission-denied")) {
+      return "No tienes permisos para esta acción.";
+    }
+    return msg;
+  }
+
+  // ===============================================================
+  // 🔥 ELIMINAR PLATO
+  // ===============================================================
+  Future<void> _deletePlato(String id, BuildContext context) async {
+    try {
+      await _db.collection("platos").doc(id).delete();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Plato eliminado correctamente 🗑️")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: ${_errorMessage(e)}")));
+    }
+  }
+
+  // ===============================================================
+  // 🔥 AGREGAR / EDITAR PLATO
+  // ===============================================================
   Future<void> _showPlatoDialog(
     BuildContext context, {
     String? id,
@@ -38,6 +74,7 @@ class PlatosScreen extends StatelessWidget {
     final descripcionController = TextEditingController(
       text: data?["descripcion"] ?? "",
     );
+    final imagenController = TextEditingController(text: data?["imagen"] ?? "");
 
     showDialog(
       context: context,
@@ -52,8 +89,8 @@ class PlatosScreen extends StatelessWidget {
               ),
               TextField(
                 controller: precioController,
-                decoration: const InputDecoration(labelText: "Precio"),
                 keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: "Precio"),
               ),
               TextField(
                 controller: categoriaController,
@@ -63,21 +100,40 @@ class PlatosScreen extends StatelessWidget {
                 controller: descripcionController,
                 decoration: const InputDecoration(labelText: "Descripción"),
               ),
+              TextField(
+                controller: imagenController,
+                decoration: const InputDecoration(
+                  labelText: "URL de imagen (Drive o enlace directo)",
+                ),
+              ),
             ],
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
             child: const Text("Cancelar"),
+            onPressed: () => Navigator.pop(context),
           ),
           ElevatedButton(
+            child: const Text("Guardar"),
             onPressed: () async {
+              if (nombreController.text.trim().isEmpty ||
+                  precioController.text.trim().isEmpty ||
+                  categoriaController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Completa los campos obligatorios"),
+                  ),
+                );
+                return;
+              }
+
               final plato = {
                 "nombre": nombreController.text.trim(),
                 "precio": double.tryParse(precioController.text.trim()) ?? 0.0,
                 "categoria": categoriaController.text.trim(),
                 "descripcion": descripcionController.text.trim(),
+                "imagen": imagenController.text.trim(),
               };
 
               try {
@@ -87,43 +143,47 @@ class PlatosScreen extends StatelessWidget {
                   await _db.collection("platos").doc(id).update(plato);
                 }
 
-                Navigator.pop(context);
+                if (Navigator.canPop(context)) Navigator.pop(context);
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      id == null ? "Plato agregado ✅" : "Plato actualizado ✅",
+                      id == null
+                          ? "Plato agregado correctamente 🍔"
+                          : "Plato actualizado correctamente ✏️",
                     ),
                   ),
                 );
               } catch (e) {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text("Error: $e")));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Error: ${_errorMessage(e)}")),
+                );
               }
             },
-            child: const Text("Guardar"),
           ),
         ],
       ),
     );
   }
 
+  // ===============================================================
+  // 🔥 UI PRINCIPAL – LISTA DE PLATOS
+  // ===============================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title: Text(
-          isAdmin ? "Panel de Admin" : "Platos disponibles",
-          style: const TextStyle(
+        title: const Text(
+          "Panel de Admin",
+          style: TextStyle(
             color: Color(0xFFFFC107),
             fontWeight: FontWeight.bold,
-            fontSize: 18, // 👈 más pequeño
+            fontSize: 18,
           ),
         ),
         centerTitle: true,
-        elevation: 0,
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _db.collection("platos").snapshots(),
@@ -136,8 +196,11 @@ class PlatosScreen extends StatelessWidget {
               ),
             );
           }
+
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(color: Color(0xFFFFC107)),
+            );
           }
 
           final platos = snapshot.data!.docs;
@@ -146,110 +209,124 @@ class PlatosScreen extends StatelessWidget {
             return const Center(
               child: Text(
                 "No hay platos registrados 🍔",
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: Colors.white70),
               ),
             );
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             itemCount: platos.length,
             itemBuilder: (context, index) {
               final plato = platos[index];
               final data = plato.data() as Map<String, dynamic>;
+
               final nombre = data["nombre"] ?? "";
-              final precio = data["precio"] ?? 0.0;
-              final categoria = data["categoria"] ?? "";
+              final precio = (data["precio"] ?? 0).toDouble();
               final descripcion = data["descripcion"] ?? "";
+              final imagen = data["imagen"] ?? "";
 
               return Card(
                 color: Colors.white.withOpacity(0.08),
-                margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 5),
+                margin: const EdgeInsets.symmetric(vertical: 8),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(15),
                 ),
-                elevation: 3,
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(10),
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFC107).withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.fastfood,
-                      color: Color(0xFFFFC107),
-                      size: 24,
-                    ),
-                  ),
-                  title: Text(
-                    nombre,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      fontSize: 14,
-                    ),
-                  ),
-                  subtitle: Text(
-                    "S/. $precio\nCategoría: $categoria\n$descripcion",
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: isAdmin
-                      ? Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(
-                                Icons.edit,
-                                color: Colors.blue,
-                                size: 20,
-                              ),
-                              onPressed: () => _showPlatoDialog(
-                                context,
-                                id: plato.id,
-                                data: data,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(15),
+                      ),
+                      child: Image.network(
+                        imagen,
+                        width: double.infinity,
+                        height: 180,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) {
+                          return Container(
+                            height: 180,
+                            color: Colors.black26,
+                            child: const Center(
+                              child: Icon(
+                                Icons.fastfood,
+                                color: Color(0xFFFFC107),
+                                size: 50,
                               ),
                             ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.delete,
-                                color: Colors.red,
-                                size: 20,
-                              ),
-                              onPressed: () => _deletePlato(plato.id, context),
+                          );
+                        },
+                      ),
+                    ),
+
+                    // Info
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            nombre,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
                             ),
-                          ],
-                        )
-                      : IconButton(
-                          icon: const Icon(
-                            Icons.shopping_cart,
-                            color: Colors.green,
-                            size: 22,
                           ),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Plato agregado al pedido 🛒"),
-                              ),
-                            );
-                          },
+                          const SizedBox(height: 4),
+                          Text(
+                            "S/. ${precio.toStringAsFixed(2)}",
+                            style: const TextStyle(
+                              color: Color(0xFFFFC107),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            descripcion,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Botones admin
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () => _showPlatoDialog(
+                            context,
+                            id: plato.id,
+                            data: data,
+                          ),
                         ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _deletePlato(plato.id, context),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                    ),
+                  ],
                 ),
               );
             },
           );
         },
       ),
-      floatingActionButton: isAdmin
-          ? FloatingActionButton(
-              backgroundColor: const Color(0xFFFFC107),
-              onPressed: () => _showPlatoDialog(context),
-              child: const Icon(Icons.add, color: Colors.black, size: 26),
-            )
-          : null,
+
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFFFFC107),
+        child: const Icon(Icons.add, color: Colors.black),
+        onPressed: () => _showPlatoDialog(context),
+      ),
     );
   }
 }

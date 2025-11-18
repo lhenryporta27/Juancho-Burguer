@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'platos/categorias_screen.dart';
 import 'login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -24,6 +26,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+
+    // 🔥 IMPORTANTE: Cerramos sesión siempre
+    Future.microtask(() async {
+      await FirebaseAuth.instance.signOut();
+    });
+
+    // Animación
     Future.delayed(const Duration(milliseconds: 400), () {
       setState(() {
         _opacity = 1.0;
@@ -32,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     });
 
+    // Cambio de slogans
     Future.doWhile(() async {
       await Future.delayed(const Duration(seconds: 3));
       if (!mounted) return false;
@@ -51,18 +61,19 @@ class _HomeScreenState extends State<HomeScreen> {
           Image.asset("lib/assets/burgerjuancho.jpg", fit: BoxFit.cover),
           Container(color: Colors.black.withOpacity(0.4)),
 
+          // Contenido
           AnimatedOpacity(
             opacity: _opacity,
             duration: const Duration(seconds: 2),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // 🔹 Título y slogan
+                // Título
                 AnimatedContainer(
                   duration: const Duration(seconds: 1),
                   curve: Curves.easeOut,
                   transform: Matrix4.translationValues(0, _slideTitle, 0),
-                  padding: const EdgeInsets.only(top: 60),
+                  padding: const EdgeInsets.only(top: 70),
                   child: Column(
                     children: [
                       const Text(
@@ -70,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 35,
+                          fontSize: 36,
                           fontWeight: FontWeight.bold,
                           shadows: [
                             Shadow(
@@ -81,7 +92,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       ),
-                      // ⬇️ Aquí bajamos más el slogan
                       const SizedBox(height: 25),
                       AnimatedSwitcher(
                         duration: const Duration(milliseconds: 600),
@@ -99,40 +109,86 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                // 🔹 Botón
+                // Botones
                 AnimatedContainer(
                   duration: const Duration(seconds: 1),
                   curve: Curves.easeOut,
                   transform: Matrix4.translationValues(0, _slideButton, 0),
-                  padding: const EdgeInsets.only(bottom: 70),
-                  child: SizedBox(
-                    width: 230,
-                    height: 55,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFC107),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(40),
+                  padding: const EdgeInsets.only(bottom: 60),
+                  child: Column(
+                    children: [
+                      // 🔥 VER CARTA → AHORA COMO VISITANTE
+                      SizedBox(
+                        width: 230,
+                        height: 55,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(40),
+                            ),
+                            elevation: 6,
+                          ),
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const CategoriasScreen(
+                                  rol: 'visitante', // 🔥 LA SOLUCIÓN REAL
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.restaurant_menu,
+                            color: Colors.black,
+                          ),
+                          label: const Text(
+                            "Ver Carta",
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                        elevation: 8,
                       ),
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => LoginScreen()),
-                        );
-                      },
-                      icon: const Icon(Icons.fastfood, color: Colors.white),
-                      label: const Text(
-                        "Iniciar Sesión",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+
+                      const SizedBox(height: 15),
+
+                      // INICIAR SESIÓN
+                      SizedBox(
+                        width: 230,
+                        height: 55,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFFC107),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(40),
+                            ),
+                            elevation: 8,
+                          ),
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => LoginScreen()),
+                            );
+                          },
+                          icon: const Icon(Icons.login, color: Colors.white),
+                          label: const Text(
+                            "Iniciar Sesión",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ],
