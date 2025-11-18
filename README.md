@@ -1,16 +1,26 @@
-# fastfood_app
+# 🍔 FastFood App
 
-A new Flutter project.
+Este repositorio contiene el código fuente y los archivos de instalación para la aplicación **FastFood App** desarrollada en Flutter.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## 📱 Descargar APK
 
-A few resources to get you started if this is your first Flutter project:
+Instalar directamente en Android:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+👉 **[Descargar APK](https://raw.githubusercontent.com/lhenryporta27/Juancho-Burguer/main/releases/app-release.apk)**
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+---
+
+## 📦 Descargar AAB
+
+Archivo para subir a Google Play:
+
+👉 **[Descargar AAB](https://raw.githubusercontent.com/lhenryporta27/Juancho-Burguer/main/releases/app-release.aab)**
+
+---
+
+## 📂 Ubicación de los archivos
+
+Los archivos de instalación se encuentran en la carpeta:
+
