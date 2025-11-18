@@ -1,4 +1,4 @@
-# 🍔 FastFood App
+# 🍔 Juancho Burguer App
 
 Este repositorio contiene el código fuente y los archivos de instalación para la aplicación **FastFood App** desarrollada en Flutter.
 
