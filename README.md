@@ -14,4 +14,5 @@ Seguir las indicaciones de la imagen para descargar el APK.
 ## 📂 Integrantes:
 
 71917543@continental.edu.pe
+
 74357127@continental.edu.pe
