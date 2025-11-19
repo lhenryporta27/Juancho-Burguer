@@ -1,7 +1,7 @@
 # 🍔 Juancho Burguer App
 
 Este repositorio contiene el código fuente y los archivos de instalación para la aplicación **Juancho Burguer** desarrollada en Flutter.
-
+Archivo de manual de usuario.
 
 ## 📂 Ubicación de los archivos
 
